@@ -36,7 +36,7 @@ def build_hetero_graph(pcap):
     # g.add_edges_from(connections)
     g.add_edges_from(connections.keys())
     nx.set_edge_attributes(g, connections) # type: ignore
-    print(g['10.215.28.18']['10.215.63.255']['packets'])
+    print(g['10.215.28.18']['10.215.63.255']['packets']) # TODO for later, could add ports to this
 
     pos = nx.kamada_kawai_layout(g) # type: ignore
     nx.draw(g, pos) # type: ignore
