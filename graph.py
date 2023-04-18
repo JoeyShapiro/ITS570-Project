@@ -4,7 +4,7 @@ from scapy.layers.inet import IP, UDP, TCP # this is its
 
 # fix weird scapy bug
 
-def build_hetero_graph(pcap):
+def build_hetero_graph(pcap, display=False):
     g = nx.Graph()
 
     connections = {}
@@ -23,24 +23,29 @@ def build_hetero_graph(pcap):
                 sport = packet[TCP].sport
                 print(f'TCP {packet[IP].src}:{packet[TCP].sport} -> {packet[IP].dst}:{packet[TCP].dport}')
             if (packet[IP].src,packet[IP].dst) not in connections:
-                connections[(packet[IP].src,packet[IP].dst)] = {
+                connections[(packet[IP].src, packet[IP].dst)] = {
                     'packets': [
                         { 'protocol': packet[2].name, 'sport': sport, 'dport': dport }
                     ]
                 } # add all connections, seems better for now
             else:
-                connections[(packet[IP].src,packet[IP].dst)]['packets'].append(
+                connections[(packet[IP].src, packet[IP].dst)]['packets'].append(
                     { 'protocol': packet[2].name, 'sport': sport, 'dport': dport }
                 )
 
     # g.add_edges_from(connections)
     g.add_edges_from(connections.keys())
-    nx.set_edge_attributes(g, connections) # type: ignore
-    print(g['10.215.28.18']['10.215.63.255']['packets']) # TODO for later, could add ports to this
+    str_conns = {}
+    for conn in connections:
+        str_conns[conn] = {"features": str(connections[conn].values())}
+    # str_conns = [ str(conn['packets']) for conn in connections.values() ]
+    nx.set_edge_attributes(g, str_conns) # type: ignore
+    print(g['10.215.28.18']['10.215.63.255']['features'])
 
-    pos = nx.kamada_kawai_layout(g) # type: ignore
-    nx.draw(g, pos) # type: ignore
-    import matplotlib.pyplot as plt
-    plt.show()
+    if display:
+        pos = nx.kamada_kawai_layout(g) # type: ignore
+        nx.draw(g, pos) # type: ignore
+        import matplotlib.pyplot as plt
+        plt.show()
 
-    return g
+    return g, connections

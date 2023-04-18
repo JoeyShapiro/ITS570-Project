@@ -1,91 +1,62 @@
 from graph import build_hetero_graph
+from torch_geometric.utils.convert import from_networkx
 
-g = build_hetero_graph('test.pcap')
+g, connections = build_hetero_graph('test.pcap')
+pyg_graph = from_networkx(g)
 
-# StellarGraph still does not support Edge Graphs
-# i remember (one) of my promblems now
-# Ill just use something else instead
-# Wanna try something new, (and mainstream)
-from stellargraph import StellarGraph
-graphs = []
-graphs.append(StellarGraph.from_networkx(g, edge_type_attr="feature"))
+from torch_geometric.datasets import Planetoid
 
-from stellargraph.mapper import PaddedGraphGenerator
-generator = PaddedGraphGenerator(graphs=graphs)
+dataset = Planetoid(root='/tmp/Cora', name='Cora')
 
-import stellargraph as sg
-from stellargraph.mapper import PaddedGraphGenerator
-from stellargraph.layer import DeepGraphCNN
-from stellargraph import StellarGraph
+import torch
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv
 
-from stellargraph import datasets
+class GCN(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = GCNConv(dataset.num_node_features, 16)
+        self.conv2 = GCNConv(16, dataset.num_classes)
 
-from sklearn import model_selection
-from IPython.display import display, HTML
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
 
-from tensorflow.keras import Model
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Dense, Conv1D, MaxPool1D, Dropout, Flatten
-from tensorflow.keras.losses import binary_crossentropy
-import tensorflow as tf
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training)
+        x = self.conv2(x, edge_index)
 
-# ////////////// KERAS MODEL ///////////////////
-print('Creating keras model')
-k = 35  # the number of rows for the output tensor
-layer_sizes = [32, 32, 32, 1]
+        return F.log_softmax(x, dim=1)
 
-dgcnn_model = DeepGraphCNN(
-    layer_sizes=layer_sizes,
-    activations=["tanh", "tanh", "tanh", "tanh"],
-    k=k,
-    bias=False,
-    generator=generator,
-)
-x_inp, x_out = dgcnn_model.in_out_tensors()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = GCN().to(device)
+data = dataset[0].to(device) # type: ignore
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
-x_out = Conv1D(filters=16, kernel_size=sum(layer_sizes), strides=sum(layer_sizes))(x_out)
-x_out = MaxPool1D(pool_size=2)(x_out)
+model.train()
+tepoch = 200
+for epoch in range(tepoch):
+    print(f'epoch: {epoch}/{tepoch}')
+    optimizer.zero_grad()
+    out = model(data)
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss.backward()
+    optimizer.step()
 
-x_out = Conv1D(filters=32, kernel_size=5, strides=1)(x_out)
+model.eval()
+pred = model(data).argmax(dim=1)
+correct = (pred[data.test_mask] == data.y[data.test_mask]).sum()
+acc = int(correct) / int(data.test_mask.sum())
+print(f'Accuracy: {acc:.4f}')
 
-x_out = Flatten()(x_out)
+# try with networkx, but may need to use pytorch. at least its standardized
+# from torch.nn import Linear, ReLU
+# from torch_geometric.nn import Sequential, GCNConv, TransformerConv
 
-x_out = Dense(units=128, activation="relu")(x_out)
-x_out = Dropout(rate=0.5)(x_out)
-
-predictions = Dense(units=1, activation="sigmoid")(x_out)
-
-model = Model(inputs=x_inp, outputs=predictions)
-
-model.compile(
-    optimizer=Adam(lr=0.0001), loss=binary_crossentropy, metrics=["acc"], # type: ignore
-)
-
-# ////////////// TRAIN //////////////////
-graph_labels = [0]
-print('training')
-train_graphs, test_graphs = model_selection.train_test_split(
-    graph_labels, train_size=0.5, test_size=2, stratify=graph_labels,
-)
-
-gen = PaddedGraphGenerator(graphs=graphs)
-
-train_gen = gen.flow( # should this be gen or generator
-    list(train_graphs.index - 1),
-    targets=train_graphs.values,
-    batch_size=50,
-    symmetric_normalization=False,
-)
-
-test_gen = gen.flow(
-    list(test_graphs.index - 1),
-    targets=test_graphs.values,
-    batch_size=1,
-    symmetric_normalization=False,
-)
-
-epochs = 100
-
-history = model.fit( # changing verbose over 2 removes cool ui
-    train_gen, epochs=epochs, verbose=2, validation_data=test_gen, shuffle=False,
-)
+# model = Sequential('x, edge_index', [
+#     (GCNConv(in_channels, 64), 'x, edge_index -> x'),
+#     ReLU(inplace=True),
+#     (GCNConv(64, 64), 'x, edge_index -> x'),
+#     ReLU(inplace=True),
+#     Linear(64, out_channels),
+# ])
