@@ -8,6 +8,7 @@ def build_hetero_graph(pcap, display=False):
     g = nx.Graph()
 
     connections = {}
+    nodes = []
     pcap_flow = sa.rdpcap(pcap)
     sessions = pcap_flow.sessions()
     for session in sessions:
@@ -32,15 +33,33 @@ def build_hetero_graph(pcap, display=False):
                 connections[(packet[IP].src, packet[IP].dst)]['packets'].append(
                     { 'protocol': packet[2].name, 'sport': sport, 'dport': dport }
                 )
+            if packet[IP].src not in nodes:
+                nodes.append((packet[IP].src, { 'y': packet[IP].src }))
+            if packet[IP].dst not in nodes:
+                nodes.append((packet[IP].dst, { 'y': packet[IP].dst }))
 
-    # g.add_edges_from(connections)
-    g.add_edges_from(connections.keys())
-    str_conns = {}
-    for conn in connections:
-        str_conns[conn] = {"features": str(connections[conn].values())}
-    # str_conns = [ str(conn['packets']) for conn in connections.values() ]
-    nx.set_edge_attributes(g, str_conns) # type: ignore
-    print(g['10.215.28.18']['10.215.63.255']['features'])
+    g.add_nodes_from([
+      (1, {'y': 1, 'x': 0.5}),
+      (2, {'y': 2, 'x': 0.2}),
+      (3, {'y': 3, 'x': 0.3}),
+      (4, {'y': 4, 'x': 0.1}),
+      (5, {'y': 5, 'x': 0.2}),
+])
+    g.add_edges_from([
+                  (1, 2), (1, 4), (1, 5),
+                  (2, 3), (2, 4),
+                  (3, 2), (3, 5),
+                  (4, 1), (4, 2),
+                  (5, 1), (5, 3)
+])
+    
+    # g.add_edges_from(connections.keys())
+    # str_conns = {} # whatever it works, so just keep it as iss
+    # for conn in connections:
+    #     # print(str(connections[conn].values()))
+    #     str_conns[conn] = { "x": 1.0 }#str(connections[conn].values())}
+    # # str_conns = [ str(conn['packets']) for conn in connections.values() ]
+    # nx.set_edge_attributes(g, str_conns) # type: ignore
 
     if display:
         pos = nx.kamada_kawai_layout(g) # type: ignore

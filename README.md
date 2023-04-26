@@ -1,0 +1,2 @@
+https://stackoverflow.com/questions/70452465/how-to-load-in-graph-from-networkx-into-pytorch-geometric-and-set-node-features
+https://pytorch-geometric.readthedocs.io/en/latest/tutorial/create_dataset.html
