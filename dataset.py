@@ -35,15 +35,17 @@ class Networks(InMemoryDataset):
         idx = [i for i in range(num_nodes)]
 
         np.random.shuffle(idx)
-        pyg.train_mask = torch.full_like(pyg.y, False, dtype=bool) # type: ignore
+        y = torch.Tensor(pyg.y)
+        pyg.train_mask = torch.full_like(y, False, dtype=bool) # type: ignore
         pyg.train_mask[idx[:num_train]] = True
-        pyg.test_mask = torch.full_like(pyg.y, False, dtype=bool) # type: ignore
+        pyg.test_mask = torch.full_like(y, False, dtype=bool) # type: ignore
         pyg.test_mask[idx[num_train:]] = True
 
-        # Read data into huge `Data` list.
-        x = torch.eye(pyg.y.size(0), dtype=torch.float)
-        data = Data(x=x, edge_index=pyg.edge_index, y=pyg.y, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
+        # create data object with modified valeus
+        x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
+        data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=pyg.edge_attr, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
 
+        # Read data into huge `Data` list.
         data_list = [data]
 
         # if i do something in one of these stpes, print something

@@ -1,9 +1,9 @@
 from graph import build_hetero_graph
 from torch_geometric.utils.convert import from_networkx
 
-g, connections = build_hetero_graph('test.pcap')
-pyg_graph = from_networkx(g)
-print(pyg_graph)
+# g, connections = build_hetero_graph('test.pcap')
+# pyg_graph = from_networkx(g)
+# print(pyg_graph)
 
 from dataset import Networks
 
