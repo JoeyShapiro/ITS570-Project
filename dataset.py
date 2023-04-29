@@ -25,7 +25,7 @@ class Networks(InMemoryDataset):
         pass
 
     def process(self):
-        g, connections = build_hetero_graph('test.pcap') # TODO save and dont do this everytime
+        g, connections = build_hetero_graph('test.pcap')
         pyg = from_networkx(g)
 
          # Split the data 
@@ -41,10 +41,12 @@ class Networks(InMemoryDataset):
         pyg.test_mask[idx[num_train:]] = True
 
         # Read data into huge `Data` list.
+        print('pyg.x:', pyg.x)
         x = torch.eye(pyg.y.size(0), dtype=torch.float) # TODO this one line was causing so many errors dim error [-1 0]
         data = Data(x=x, edge_index=pyg.edge_index, y=pyg.y, train_mask=pyg.train_mask)
+        print('data.x:', data.x)
         print('pyg:',data)
-        # exit(1)
+        
         data_list = [data]
 
         # if i do something in one of these stpes, print something

@@ -8,7 +8,6 @@ print(pyg_graph)
 
 # from torch_geometric.datasets import Planetoid, KarateClub
 from dataset import Networks
-from torch_geometric.datasets import Planetoid
 
 dataset = Networks(root='/tmp/Networks', name='test')
 # dataset = Planetoid(root='/tmp/Cora', name='Cora')
@@ -16,15 +15,21 @@ print(type(dataset))
 
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv
+from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv, Linear
 
 class GNN(torch.nn.Module):
     def __init__(self):
         super().__init__()
         print('edge features: ', dataset.num_edge_features)
-        # self.conv1 = TransformerConv(dataset.num_edge_features, 16)
-        self.conv1 = GCNConv(5, 4) # TODO this might help the interval [0 0] problrm
-        self.conv2 = GCNConv(4, int(dataset.num_classes)) # something about 17 and 5
+        self.conv1 = TransformerConv(dataset.num_edge_features, 4)
+        self.conv2 = GCNConv(4, int(dataset.num_classes))
+        self.conv3 = GCNConv(int(dataset.num_classes), 2)
+        self.classifier = Linear(2, dataset.num_classes)
+
+        # self.conv1 = GCNConv(dataset.num_features, 4)
+        # self.conv2 = GCNConv(4, 4)
+        # self.conv3 = GCNConv(4, 2)
+        # self.classifier = Linear(2, dataset.num_classes)
 
     def forward(self, data):
         x, edge_index = torch.Tensor(data.x), data.edge_index
@@ -33,12 +38,12 @@ class GNN(torch.nn.Module):
         x = F.relu(x)
         x = F.dropout(x, training=self.training)
         x = self.conv2(x, edge_index)
+        x = self.conv3(x, edge_index)
+        x = self.classifier(x)
 
         return F.log_softmax(x, dim=0)
 
-from torch_geometric.datasets import KarateClub
-
-# dataset = KarateClub()
+# TODO put this in display for dataset, only display first
 data = dataset[0]
 print(type(data))
 print('Dataset properties')
@@ -63,49 +68,6 @@ print(f'Contains isolated nodes: {data.has_isolated_nodes()}') #Does the graph c
 print(f'Contains self-loops: {data.has_self_loops()}') #Does the graph contains nodes that are linked to themselves
 print(f'Is undirected: {data.is_undirected()}') #Is the graph an undirected graph
 
-import torch
-from torch.nn import Linear
-from torch_geometric.nn import GCNConv
-
-
-class GCN(torch.nn.Module):
-    def __init__(self):
-        super(GCN, self).__init__()
-        torch.manual_seed(12345)
-        self.conv1 = GCNConv(dataset.num_features, 4)
-        self.conv2 = GCNConv(4, 4)
-        self.conv3 = GCNConv(4, 2)
-        self.classifier = Linear(2, dataset.num_classes)
-
-    def forward(self, x, edge_index):
-        h = self.conv1(x, edge_index)
-        h = h.tanh()
-        h = self.conv2(h, edge_index)
-        h = h.tanh()
-        h = self.conv3(h, edge_index)
-        h = h.tanh()  # Final GNN embedding space.
-        
-        # Apply a final (linear) classifier.
-        out = self.classifier(h)
-
-        return out, h
-
-model = GCN()
-criterion = torch.nn.CrossEntropyLoss()  #Initialize the CrossEntropyLoss function.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)  # Initialize the Adam optimizer.
-
-def train(data):
-    optimizer.zero_grad()  # Clear gradients.
-    out, h = model(data.x, data.edge_index)  # Perform a single forward pass.
-    loss = criterion(out[data.train_mask], data.y[data.train_mask])  # Compute the loss solely based on the training nodes.
-    loss.backward()  # Derive gradients.
-    optimizer.step()  # Update parameters based on gradients.
-    return loss, h
-
-for epoch in range(401):
-    loss, h = train(data)
-    print(f'Epoch: {epoch}, Loss: {loss}')
-
 print(type(dataset), type(dataset[0]))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = GNN().to(device)
@@ -113,29 +75,17 @@ data = dataset[0].to(device) # type: ignore
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
 model.train()
-tepoch = 1
-for epoch in range(tepoch): # TODO something is happening, just create new set like karate
-    print(f'epoch: {epoch}/{tepoch}')
+tepoch = 5
+for epoch in range(1, tepoch+1):
     optimizer.zero_grad()
     out = model(data) # this calls forward
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     # loss.backward()
     optimizer.step()
+    print(f'Epoch: {epoch}/{tepoch}, Loss: {loss}')
 
 model.eval()
 pred = model(data).argmax(dim=1)
 correct = (pred[data.test_mask] == data.y[data.test_mask]).sum()
 acc = int(correct) / int(data.test_mask.sum())
 print(f'Accuracy: {acc:.4f}')
-
-# try with networkx, but may need to use pytorch. at least its standardized
-# from torch.nn import Linear, ReLU
-# from torch_geometric.nn import Sequential, GCNConv, TransformerConv
-
-# model = Sequential('x, edge_index', [
-#     (GCNConv(in_channels, 64), 'x, edge_index -> x'),
-#     ReLU(inplace=True),
-#     (GCNConv(64, 64), 'x, edge_index -> x'),
-#     ReLU(inplace=True),
-#     Linear(64, out_channels),
-# ])
