@@ -41,12 +41,9 @@ class Networks(InMemoryDataset):
         pyg.test_mask[idx[num_train:]] = True
 
         # Read data into huge `Data` list.
-        print('pyg.x:', pyg.x)
-        x = torch.eye(pyg.y.size(0), dtype=torch.float) # TODO this one line was causing so many errors dim error [-1 0]
-        data = Data(x=x, edge_index=pyg.edge_index, y=pyg.y, train_mask=pyg.train_mask)
-        print('data.x:', data.x)
-        print('pyg:',data)
-        
+        x = torch.eye(pyg.y.size(0), dtype=torch.float)
+        data = Data(x=x, edge_index=pyg.edge_index, y=pyg.y, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
+
         data_list = [data]
 
         # if i do something in one of these stpes, print something
@@ -56,7 +53,6 @@ class Networks(InMemoryDataset):
         if self.pre_transform is not None:
             data_list = [self.pre_transform(data) for data in data_list]
 
-        print('finally')
         data, slices = self.collate(data_list) # type: ignore
 
         # self.data, self.slices = data, slices
