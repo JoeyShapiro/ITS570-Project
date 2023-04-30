@@ -16,9 +16,9 @@ from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv, Linear
 class GNN(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = TransformerConv(dataset.num_edge_features, 4)
-        self.conv2 = GCNConv(4, int(dataset.num_classes))
-        self.conv3 = GCNConv(int(dataset.num_classes), 2)
+        self.conv1 = TransformerConv(dataset.num_classes, 4)
+        self.conv2 = GCNConv(4, int(dataset.num_edge_features))
+        self.conv3 = GCNConv(int(dataset.num_edge_features), 2)
         self.classifier = Linear(2, dataset.num_classes)
 
     def forward(self, data):
@@ -38,6 +38,7 @@ print('Dataset properties')
 print('==============================================================')
 print(f'Dataset: {dataset}') #This prints the name of the dataset
 print(f'Number of graphs in the datasetset: {len(dataset)}')
+print(f'Number of edge features: {dataset.num_edge_features}')
 print(f'Number of features: {dataset.num_features}') #Number of features each node in the dataset has
 print(f'Number of classes: {dataset.num_classes}') #Number of classes that a node can be classified into
 
@@ -47,10 +48,11 @@ print('==============================================================')
 print(f'Data: {dataset[0]}')
 print(f'Number of nodes: {dataset[0].num_nodes}') #Number of nodes in the graph # type: ignore
 print(f'Number of edges: {dataset[0].num_edges}') #Number of edges in the graph # type: ignore
+print(f'Number of edge features: {dataset[0].num_edge_features}')
 print(f'Average node degree: {dataset[0].num_edges / dataset[0].num_nodes:.2f}') # Average number of nodes in the graph # type: ignore
 print(f'Contains isolated nodes: {dataset[0].has_isolated_nodes()}') #Does the graph contains nodes that are not connected # type: ignore
 print(f'Contains self-loops: {dataset[0].has_self_loops()}') #Does the graph contains nodes that are linked to themselves # type: ignore
-print(f'Is undirected: {dataset[0].is_undirected()}') # type: ignore #Is the graph an undirected graph
+# print(f'Is undirected: {dataset[0].is_undirected()}') # type: ignore #Is the graph an undirected graph
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = GNN().to(device)

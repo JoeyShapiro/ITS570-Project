@@ -34,6 +34,10 @@ class Networks(InMemoryDataset):
         num_train = int(num_nodes * train_ratio)
         idx = [i for i in range(num_nodes)]
 
+        # create a 3d tensor with padding to make it a perfect rectangle
+        length = max(map(len, pyg.z))
+        z = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z))) for z in pyg.z ]))
+
         np.random.shuffle(idx)
         y = torch.Tensor(pyg.y)
         pyg.train_mask = torch.full_like(y, False, dtype=bool) # type: ignore
@@ -42,8 +46,11 @@ class Networks(InMemoryDataset):
         pyg.test_mask[idx[num_train:]] = True
 
         # create data object with modified valeus
+        # TODO do i even use the node features (x)
+        # i thinki need them for gerneral stuff
+        # TODO maybe convert x to y and z to x
         x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
-        data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=pyg.edge_attr, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
+        data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=z, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
 
         # Read data into huge `Data` list.
         data_list = [data]
