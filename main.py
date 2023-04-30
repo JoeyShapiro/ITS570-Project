@@ -16,13 +16,13 @@ from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv, Linear
 class GNN(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = TransformerConv(dataset.num_classes, 4)
-        self.conv2 = GCNConv(4, int(dataset.num_edge_features))
-        self.conv3 = GCNConv(int(dataset.num_edge_features), 2)
+        self.conv1 = SAGEConv(dataset.num_edge_features, 4)
+        self.conv2 = SAGEConv(4, int(dataset.num_edge_features))
+        self.conv3 = SAGEConv(int(dataset.num_edge_features), 2)
         self.classifier = Linear(2, dataset.num_classes)
 
     def forward(self, data):
-        x, edge_index = torch.Tensor(data.x), data.edge_index
+        x, edge_index = torch.Tensor(data.edge_attr), data.edge_index
 
         x = self.conv1(x, edge_index)
         x = F.relu(x)

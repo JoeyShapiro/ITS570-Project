@@ -36,8 +36,12 @@ class Networks(InMemoryDataset):
 
         # create a 3d tensor with padding to make it a perfect rectangle
         length = max(map(len, pyg.z))
-        z = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z))) for z in pyg.z ]))
+        z = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.z ]))
 
+        # hwew ia a group ondes. these ones are bad
+        # bsed on the connections they made, find the ones all the bad ones share
+        # based on the bad nodes, what edges are bad and why
+        # now mark all links good or bad based on the ones they share
         np.random.shuffle(idx)
         y = torch.Tensor(pyg.y)
         pyg.train_mask = torch.full_like(y, False, dtype=bool) # type: ignore
