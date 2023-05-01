@@ -11,24 +11,24 @@ dataset = Networks(root='/tmp/Networks', name='test')
 
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv, Linear
+from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv, Linear, GATConv
 
 class GNN(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = SAGEConv(dataset.num_edge_features, 4)
-        self.conv2 = SAGEConv(4, int(dataset.num_edge_features))
-        self.conv3 = SAGEConv(int(dataset.num_edge_features), 2)
-        self.classifier = Linear(2, dataset.num_classes)
+        self.conv1 = GATConv(dataset.num_node_features, dataset.num_edge_features)
+        self.conv2 = GATConv(dataset.num_edge_features, int(dataset.num_features))
+        self.conv3 = GATConv(int(dataset.num_features), 2)
+        self.classifier = Linear(2, 21)
 
     def forward(self, data):
-        x, edge_index = torch.Tensor(data.edge_attr), data.edge_index
+        x, edge_index, edge_attr = torch.Tensor(data.x), data.edge_index, data.edge_attr
 
-        x = self.conv1(x, edge_index)
+        x = self.conv1(x, edge_index, edge_attr)
         x = F.relu(x)
         x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index)
-        x = self.conv3(x, edge_index)
+        x = self.conv2(x, edge_index, edge_attr)
+        x = self.conv3(x, edge_index, edge_attr)
         x = self.classifier(x)
 
         return F.log_softmax(x, dim=0)
@@ -64,7 +64,7 @@ tepoch = 5
 for epoch in range(1, tepoch+1):
     optimizer.zero_grad()
     out = model(data) # this calls forward
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = F.l1_loss(out[data.train_mask], data.y[data.train_mask]) # nil loss
     # loss.backward()
     optimizer.step()
     print(f'Epoch: {epoch}/{tepoch}, Loss: {loss}')

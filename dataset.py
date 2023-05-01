@@ -30,7 +30,7 @@ class Networks(InMemoryDataset):
 
          # Split the data 
         train_ratio = 0.2
-        num_nodes = pyg.x.shape[0]
+        num_nodes = len(pyg.x)#pyg.x.shape[0]
         num_train = int(num_nodes * train_ratio)
         idx = [i for i in range(num_nodes)]
 
@@ -54,6 +54,8 @@ class Networks(InMemoryDataset):
         # i thinki need them for gerneral stuff
         # TODO maybe convert x to y and z to x
         x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
+        # length = max(map(len, pyg.x))
+        # x = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.x ]))
         data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=z, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
 
         # Read data into huge `Data` list.

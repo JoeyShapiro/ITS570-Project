@@ -59,6 +59,10 @@ def build_hetero_graph(pcap, display=False):
     # str_conns = [ str(conn['packets']) for conn in connections.values() ]
     nx.set_edge_attributes(g, str_conns) # type: ignore
 
+    # edge attributes are added to the src ip node
+    # for conn in connections:
+    #     g.nodes[conn[0]]['x'] = str_conns[conn]['z'][0][0]
+
     if display:
         pos = nx.kamada_kawai_layout(g) # type: ignore
         nx.draw(g, pos) # type: ignore
