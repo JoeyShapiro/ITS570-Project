@@ -7,9 +7,9 @@ from gnn import GNN
 # print(pyg_graph)
 
 from dataset import Networks
-from torch_geometric.datasets import KarateClub
+from torch_geometric.datasets import Planetoid
 
-# dataset = KarateClub()
+# dataset = Planetoid(root='/tmp/Planetoid', name='Cora')
 dataset = Networks(root='/tmp/Networks', name='test')
 
 import torch
@@ -49,7 +49,7 @@ for epoch in range(1, tepoch+1):
     optimizer.zero_grad()
     out = model(data) # this calls forward
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
-    # loss.backward()
+    loss.backward()
     optimizer.step()
     print(f'Epoch: {epoch}/{tepoch}, Loss: {loss}')
 
