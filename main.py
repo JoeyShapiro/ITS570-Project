@@ -8,10 +8,12 @@ from gnn import GNN
 
 from dataset import Networks
 from torch_geometric.datasets import Planetoid, KarateClub
+from torch_geometric.loader import DataLoader
 
 # dataset = KarateClub()
 # dataset = Planetoid(root='/tmp/Planetoid', name='Cora')
 dataset = Networks(root='/tmp/Networks', name='test')
+loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 import torch
 import torch.nn.functional as F

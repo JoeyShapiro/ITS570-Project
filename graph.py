@@ -2,6 +2,7 @@ import networkx as nx
 import scapy.all as sa
 from scapy.layers.inet import IP, UDP, TCP # this is its
 import numpy as np
+from tqdm import tqdm
 
 # fix weird scapy bug
 
@@ -13,8 +14,8 @@ def build_hetero_graph(pcap, bad, display=False):
     transports = [] # need index, so better then dict
     pcap_flow = sa.rdpcap(pcap)
     sessions = pcap_flow.sessions()
-    for session in sessions:
-        for packet in sessions[session]:
+    for session in tqdm(sessions, desc='parsing sessions'):
+        for packet in tqdm(sessions[session], desc='parsing packets'):
             dport = -1 # TODO what to do if no data
             sport = -1
 
@@ -59,9 +60,6 @@ def build_hetero_graph(pcap, bad, display=False):
     # was commented out part, gnn not perfect, y was every value, nothing to learn
     # just need to give real data and test different models
     # y is every value so it couldnt find anything differnt
-    for i, ip in enumerate(nodes):
-        if ip == '192.168.1.132':
-            print(ip, bad)
     g.add_nodes_from([ (i, { "y": 1 if ip in bad else 0, "x": 1.0 }) for i, ip in enumerate(nodes) ]) # convert to index list; they will match up
     g.add_edges_from(connections.keys())
     str_conns = {} # whatever it works, so just keep it as iss
