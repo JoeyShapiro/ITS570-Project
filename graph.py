@@ -47,7 +47,8 @@ def build_hetero_graph(pcap, display=False):
                 )
     
     # it can just find x and y when converting
-    g.add_nodes_from([ (i, { "y": i, "x": 1.0 }) for i in range(len(nodes)) ]) # convert to index list; they will match up
+    # y is mask, 0 = good
+    g.add_nodes_from([ (i, { "y": 0, "x": 1.0 }) for i in range(len(nodes)) ]) # convert to index list; they will match up
     g.add_edges_from(connections.keys())
     str_conns = {} # whatever it works, so just keep it as iss
     for conn in connections:

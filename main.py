@@ -7,8 +7,9 @@ from gnn import GNN
 # print(pyg_graph)
 
 from dataset import Networks
-from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import Planetoid, KarateClub
 
+# dataset = KarateClub()
 # dataset = Planetoid(root='/tmp/Planetoid', name='Cora')
 dataset = Networks(root='/tmp/Networks', name='test')
 
