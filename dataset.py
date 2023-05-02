@@ -25,41 +25,49 @@ class Networks(InMemoryDataset):
         pass
 
     def process(self):
-        g, connections = build_hetero_graph('test.pcap')
-        pyg = from_networkx(g)
+        data_list = []
+        pcaps = {
+            # "test.pcap": [],
+            "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-Honeypot-Capture-4-1/2018-10-25-14-06-32-192.168.1.132.pcap": ['192.168.1.132']
+        }
 
-         # Split the data 
-        train_ratio = 0.2
-        num_nodes = len(pyg.x)#pyg.x.shape[0]
-        num_train = int(num_nodes * train_ratio)
-        idx = [i for i in range(num_nodes)]
+        for pcap in pcaps:
+            print(pcap, pcaps[pcap])
+            g, connections = build_hetero_graph(pcap, pcaps[pcap])
+            pyg = from_networkx(g)
 
-        # create a 3d tensor with padding to make it a perfect rectangle
-        length = max(map(len, pyg.z))
-        z = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.z ]))
+            # Split the data 
+            train_ratio = 0.2
+            num_nodes = len(pyg.x)#pyg.x.shape[0]
+            num_train = int(num_nodes * train_ratio)
+            idx = [i for i in range(num_nodes)]
 
-        # hwew ia a group ondes. these ones are bad
-        # bsed on the connections they made, find the ones all the bad ones share
-        # based on the bad nodes, what edges are bad and why
-        # now mark all links good or bad based on the ones they share
-        np.random.shuffle(idx)
-        y = torch.Tensor(pyg.y)
-        pyg.train_mask = torch.full_like(y, False, dtype=bool) # type: ignore
-        pyg.train_mask[idx[:num_train]] = True
-        pyg.test_mask = torch.full_like(y, False, dtype=bool) # type: ignore
-        pyg.test_mask[idx[num_train:]] = True
+            # create a 3d tensor with padding to make it a perfect rectangle
+            length = max(map(len, pyg.z))
+            z = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.z ]))
 
-        # create data object with modified valeus
-        # TODO do i even use the node features (x)
-        # i thinki need them for gerneral stuff
-        # TODO maybe convert x to y and z to x
-        x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
-        # length = max(map(len, pyg.x))
-        # x = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.x ]))
-        data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=z, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
+            # hwew ia a group ondes. these ones are bad
+            # bsed on the connections they made, find the ones all the bad ones share
+            # based on the bad nodes, what edges are bad and why
+            # now mark all links good or bad based on the ones they share
+            np.random.shuffle(idx)
+            y = torch.Tensor(pyg.y)
+            pyg.train_mask = torch.full_like(y, False, dtype=bool) # type: ignore
+            pyg.train_mask[idx[:num_train]] = True
+            pyg.test_mask = torch.full_like(y, False, dtype=bool) # type: ignore
+            pyg.test_mask[idx[num_train:]] = True
 
-        # Read data into huge `Data` list.
-        data_list = [data]
+            # create data object with modified valeus
+            # TODO do i even use the node features (x)
+            # i thinki need them for gerneral stuff
+            # TODO maybe convert x to y and z to x
+            x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
+            # length = max(map(len, pyg.x))
+            # x = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.x ]))
+            data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=z, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
+
+            # Read data into huge `Data` list.
+            data_list.append(data)
 
         # if i do something in one of these stpes, print something
         if self.pre_filter is not None:

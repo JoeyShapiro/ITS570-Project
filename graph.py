@@ -5,7 +5,7 @@ import numpy as np
 
 # fix weird scapy bug
 
-def build_hetero_graph(pcap, display=False):
+def build_hetero_graph(pcap, bad, display=False):
     g = nx.Graph()
 
     connections = {}
@@ -17,6 +17,9 @@ def build_hetero_graph(pcap, display=False):
         for packet in sessions[session]:
             dport = -1 # TODO what to do if no data
             sport = -1
+
+            if not packet.haslayer(IP):
+                continue
 
             if packet[IP].src not in nodes:
                 nodes.append(packet[IP].src)
@@ -48,7 +51,18 @@ def build_hetero_graph(pcap, display=False):
     
     # it can just find x and y when converting
     # y is mask, 0 = good
-    g.add_nodes_from([ (i, { "y": 0, "x": 1.0 }) for i in range(len(nodes)) ]) # convert to index list; they will match up
+    # this as i wasnt able to learn anything
+    # everything was different
+    # other datasets have less y's
+    # those worked
+    # now works
+    # was commented out part, gnn not perfect, y was every value, nothing to learn
+    # just need to give real data and test different models
+    # y is every value so it couldnt find anything differnt
+    for i, ip in enumerate(nodes):
+        if ip == '192.168.1.132':
+            print(ip, bad)
+    g.add_nodes_from([ (i, { "y": 1 if ip in bad else 0, "x": 1.0 }) for i, ip in enumerate(nodes) ]) # convert to index list; they will match up
     g.add_edges_from(connections.keys())
     str_conns = {} # whatever it works, so just keep it as iss
     for conn in connections:

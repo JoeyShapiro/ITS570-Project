@@ -13,10 +13,10 @@ class GNN(torch.nn.Module):
     def forward(self, data):
         x, edge_index, edge_attr = torch.Tensor(data.x), data.edge_index, data.edge_attr
 
-        x = self.conv1(x, edge_index)#, edge_attr)
+        x = self.conv1(x, edge_index, edge_attr)
         x = F.relu(x)
         x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index)#, edge_attr)
+        x = self.conv2(x, edge_index, edge_attr)
         # x = self.conv3(x, edge_index)# edge_attr)
         x = self.classifier(x)
 
