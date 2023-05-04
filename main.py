@@ -7,12 +7,13 @@ from gnn import GNN
 # print(pyg_graph)
 
 from dataset import Networks
-from torch_geometric.datasets import Planetoid, KarateClub
+from torch_geometric.datasets import Planetoid, KarateClub, GNNBenchmarkDataset
 from torch_geometric.loader import DataLoader
 
 # dataset = KarateClub()
 # dataset = Planetoid(root='/tmp/Planetoid', name='Cora')
 dataset = Networks(root='/tmp/Networks', name='test')
+# dataset = GNNBenchmarkDataset(root='/tmp/Bench', name='PATTERN')
 loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 import torch

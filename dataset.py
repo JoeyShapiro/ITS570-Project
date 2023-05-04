@@ -30,8 +30,8 @@ class Networks(InMemoryDataset):
         data_base = '/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/'
         # cant use self.raw_file_names because i need bad ip too
         pcaps = {
-            "test.pcap": [],
-            # data_base + "CTU-Honeypot-Capture-4-1/2018-10-25-14-06-32-192.168.1.132.pcap": ['192.168.1.132'],
+            # "test.pcap": [],
+            data_base + "CTU-Honeypot-Capture-4-1/2018-10-25-14-06-32-192.168.1.132.pcap": ['192.168.1.132'],
             # data_base + "CTU-Honeypot-Capture-7-1/Somfy-01/2019-07-03-15-15-47-first_start_somfy_gateway.pcap": [],
             # data_base + "CTU-IoT-Malware-Capture-1-1/2018-05-09-192.168.100.103.pcap": [ '192.168.100.103' ]
         }
@@ -65,7 +65,8 @@ class Networks(InMemoryDataset):
             pyg.test_mask = torch.full_like(y, False, dtype=bool) # type: ignore
             pyg.test_mask[idx[num_train:]] = True
 
-            x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
+            # x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
+            x = torch.ones(y.size(0), dtype=torch.float).reshape(-1,1)
             # length = max(map(len, pyg.x))
             # x = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.x ]))
             data = Data(x=x, edge_index=pyg.edge_index, y=y, edge_attr=z, train_mask=pyg.train_mask, test_mask=pyg.test_mask)
@@ -79,6 +80,8 @@ class Networks(InMemoryDataset):
 
         if self.pre_transform is not None:
             data_list = [self.pre_transform(data) for data in data_list]
+
+        # add padding to each edge features to match size of max graph
 
         data, slices = self.collate(data_list) # type: ignore
 
