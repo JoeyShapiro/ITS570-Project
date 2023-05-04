@@ -3,6 +3,7 @@ import torch
 from torch_geometric.data import InMemoryDataset, download_url, Data
 from graph import build_hetero_graph, graph_from_pcap
 from torch_geometric.utils.convert import from_networkx
+from tqdm import tqdm
 
 
 class Networks(InMemoryDataset):
@@ -24,17 +25,22 @@ class Networks(InMemoryDataset):
         # download_url(url, self.raw_dir)
         pass
 
-    def process(self):
+    def process(self): # this is kinda fun. do something like this later
         data_list = []
+        data_base = '/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/'
+        # cant use self.raw_file_names because i need bad ip too
         pcaps = {
             "test.pcap": [],
-            # "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-Honeypot-Capture-4-1/2018-10-25-14-06-32-192.168.1.132.pcap": ['192.168.1.132'],
-            # "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-Honeypot-Capture-7-1/Somfy-01/2019-07-03-15-15-47-first_start_somfy_gateway.pcap": [],
-            # "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-IoT-Malware-Capture-1-1/2018-05-09-192.168.100.103.pcap": [ '192.168.100.103' ]
+            # data_base + "CTU-Honeypot-Capture-4-1/2018-10-25-14-06-32-192.168.1.132.pcap": ['192.168.1.132'],
+            # data_base + "CTU-Honeypot-Capture-7-1/Somfy-01/2019-07-03-15-15-47-first_start_somfy_gateway.pcap": [],
+            # data_base + "CTU-IoT-Malware-Capture-1-1/2018-05-09-192.168.100.103.pcap": [ '192.168.100.103' ]
         }
 
-        for pcap in pcaps:
-            print(pcap, pcaps[pcap])
+        pbar = tqdm(pcaps, desc='processing graphs')
+        for pcap in pbar:
+            pbar.display(f'{pcap} with malicious nodes {pcaps[pcap]}') # not sure if this is done after it finishes
+            # pbar.refresh()
+
             g, connections = graph_from_pcap(pcap, pcaps[pcap])
             pyg = from_networkx(g)
 
@@ -59,10 +65,6 @@ class Networks(InMemoryDataset):
             pyg.test_mask = torch.full_like(y, False, dtype=bool) # type: ignore
             pyg.test_mask[idx[num_train:]] = True
 
-            # create data object with modified valeus
-            # TODO do i even use the node features (x)
-            # i thinki need them for gerneral stuff
-            # TODO maybe convert x to y and z to x
             x = torch.eye(y.size(0), dtype=torch.float) # this is node features, so they can be compared; edge attr is different
             # length = max(map(len, pyg.x))
             # x = torch.from_numpy(np.array([ np.array(z+[[-1, -1, -1]]*(length-len(z)), dtype=np.float32) for z in pyg.x ]))

@@ -58,22 +58,13 @@ def graph_from_pcap(pcap, bad, display=False):
         # total += len(packet)
         pbar.update(len(packet))
 
-    # TODO use smaller files; batch load; dont use tqdm, or just a little and test packet total size thing (small files)
+    # TODO use smaller files; batch load
     sa.sniff(offline=pcap, prn=parse_pkt, store=0)
-    # it can just find x and y when converting
-    # y is mask, 0 = good
-    # this as i wasnt able to learn anything
-    # everything was different
-    # other datasets have less y's
-    # those worked
-    # now works
-    # was commented out part, gnn not perfect, y was every value, nothing to learn
-    # just need to give real data and test different models
-    # y is every value so it couldnt find anything differnt
+    
     g.add_nodes_from([ (i, { "y": 1 if ip in bad else 0, "x": 1.0 }) for i, ip in enumerate(nodes) ]) # convert to index list; they will match up
     g.add_edges_from(connections.keys())
     str_conns = {} # whatever it works, so just keep it as iss
-    for conn in connections:
+    for conn in tqdm(connections, desc='aggregating links'):
         # print(str(connections[conn].values()))
         data = []
         for pkt in connections[conn]['packets']:
