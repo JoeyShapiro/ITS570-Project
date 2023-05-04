@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch_geometric.data import InMemoryDataset, download_url, Data
-from graph import build_hetero_graph
+from graph import build_hetero_graph, graph_from_pcap
 from torch_geometric.utils.convert import from_networkx
 
 
@@ -27,15 +27,15 @@ class Networks(InMemoryDataset):
     def process(self):
         data_list = []
         pcaps = {
-            # "test.pcap": [],
+            "test.pcap": [],
             # "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-Honeypot-Capture-4-1/2018-10-25-14-06-32-192.168.1.132.pcap": ['192.168.1.132'],
             # "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-Honeypot-Capture-7-1/Somfy-01/2019-07-03-15-15-47-first_start_somfy_gateway.pcap": [],
-            "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-IoT-Malware-Capture-1-1/2018-05-09-192.168.100.103.pcap": [ '192.168.100.103' ]
+            # "/Volumes/T7 Touch/ITS472/project 2/opt/Malware-Project/BigDataset/IoTScenarios/CTU-IoT-Malware-Capture-1-1/2018-05-09-192.168.100.103.pcap": [ '192.168.100.103' ]
         }
 
         for pcap in pcaps:
             print(pcap, pcaps[pcap])
-            g, connections = build_hetero_graph(pcap, pcaps[pcap])
+            g, connections = graph_from_pcap(pcap, pcaps[pcap])
             pyg = from_networkx(g)
 
             # Split the data 

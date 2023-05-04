@@ -5,7 +5,7 @@ from torch_geometric.nn import GCNConv, TransformerConv, SAGEConv, Linear, GATCo
 class GNN(torch.nn.Module):
     def __init__(self, dataset):
         super().__init__()
-        self.conv1 = GATConv(dataset.num_node_features, dataset.num_edge_features)
+        self.conv1 = GATConv(dataset.num_node_features, dataset.num_edge_features) # TODO list these
         self.conv2 = GATConv(dataset.num_edge_features, 16)#int(dataset.num_node_features/4))
         # self.conv3 = GATConv(int(dataset.num_node_features/4), 16)
         self.classifier = Linear(16, dataset.num_classes) # this 21 was causing issues
